@@ -9,17 +9,23 @@ import { Link } from 'react-router-dom';
 const PWD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%]).{8,24}$/;
 const REGISTER_URL = '/register';
 
+import { getAuth, createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+import { getFirestore } from "firebase/firestore";
+import app  from "../firebase.js"
+import { doc, setDoc } from "firebase/firestore"; 
 
 
 function Register() {
 
   const userRef = useRef();
     const errRef = useRef();
-
+    const navigate = useNavigate();
     const [user, setUser] = useState('');
     const [validName, setValidName] = useState(true);
     const [userFocus, setUserFocus] = useState(false);
 
+    const [email, setEmail] = useState('');
     const [pwd, setPwd] = useState('');
     const [validPwd, setValidPwd] = useState(false);
     const [pwdFocus, setPwdFocus] = useState(false);
@@ -51,42 +57,43 @@ function Register() {
     useEffect(() => {
         setErrMsg('');
     }, [user, pwd, matchPwd])
-
+    
+    const db = getFirestore(app);
+  
     const handleSubmit = async (e) => {
         e.preventDefault();
         // if button enabled with JS hack
-        const v1 = USER_REGEX.test(user);
-        const v2 = PWD_REGEX.test(pwd);
-        if (!v1 || !v2) {
-            setErrMsg("Invalid Entry");
-            return;
-        }
-        try {
-            const response = await axios.post(REGISTER_URL,
-                JSON.stringify({ user, pwd }),
-                {
-                    headers: { 'Content-Type': 'application/json' },
-                    withCredentials: true
-                }
-            );
-            // TODO: remove console.logs before deployment
-            console.log(JSON.stringify(response?.data));
-            //console.log(JSON.stringify(response))
-            setSuccess(true);
-            //clear state and controlled inputs
-            setUser('');
-            setPwd('');
-            setMatchPwd('');
-        } catch (err) {
-            if (!err?.response) {
-                setErrMsg('No Server Response');
-            } else if (err.response?.status === 409) {
-                setErrMsg('Username Taken');
-            } else {
-                setErrMsg('Registration Failed')
-            }
-            errRef.current.focus();
-        }
+
+        const auth = getAuth();
+        createUserWithEmailAndPassword(auth, email, pwd)
+          .then(async (userCredential) => {
+            
+            //const user = userCredential.user;
+
+            // Write to firestore
+                       
+            const data = {
+              username: user,
+              email,
+              complaints: []
+            };
+            await setDoc(doc(db, "users", email), data);
+
+            console.log("User registered");
+            signOut(auth).then(() => {
+              console.log("Sign-out successful");
+            }).catch((error) => {
+              console.log(error);
+            });
+
+            navigate("/");
+          })
+          .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            console.log(errorMessage);
+            // ..
+          });
     }
 
   return (
@@ -104,7 +111,8 @@ function Register() {
             {/* <FontAwesomeIcon icon={faCheck} className={validName ? "valid" : "hide"} /> */}
             {/* <FontAwesomeIcon icon={faTimes} className={validName || !user ? "hide" : "invalid"} /> */}
             
-            <MDBInput wrapperClass='mb-4' label='Your Email' size='lg' id='form2' type='email' required/>
+            <MDBInput wrapperClass='mb-4' label='Your Email' size='lg' id='form2' type='email' required
+            onChange={(e) => setEmail(e.target.value)} value={email} />
             
             <MDBInput wrapperClass='mb-4' label='Password' size='lg' id='form3' type='password' required
             onChange={(e)=>setPwd(e.target.value)} value={pwd} onFocus={()=>setPwdFocus(true)} onBlur={()=>setPwdFocus(false)}/>
@@ -118,7 +126,8 @@ function Register() {
             </div>
             
             <MDBBtn type='submit' className='mb-4 w-100 gradient-custom-4' size='lg'
-             disabled={ !validName || !validPwd || !validMatch || !agreement} >Register</MDBBtn>
+             //disabled={ !validName || !validPwd || !validMatch || !agreement} 
+             >Register</MDBBtn>
              <p className="mb-5 pb-lg-2" style={{color: '#393f81'}}>Already have an account? <Link to="/">Login</Link></p>
           </form>
 

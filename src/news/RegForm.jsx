@@ -6,21 +6,70 @@ import {
 } from 'mdb-react-ui-kit';
 import 'mdb-react-ui-kit/dist/css/mdb.min.css';
 import '../news/newsItem.css'; 
-import { Link } from 'react-router-dom';
+
+import app  from "../firebase.js";
+import { doc, addDoc, collection, updateDoc, arrayUnion } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+
+import { useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
+//import { FieldValue } from 'firebase-admin/firestore';
+
 export default function RegForm() {
     const [message,setMessage] = useState("");
-  return (
-    <form className="reg_form">
-    <h1 className="mb-3">Complaint Form</h1>
-      {/* <MDBInput id='form4Example1' wrapperClass='mb-4' label='Name' required/>
-      <MDBInput type='email' id='form4Example2' wrapperClass='mb-4' label='Email address' required/> */}
-      {/* <MDBInput wrapperClass='mb-4' textarea id='form4Example3' rows={4} label='Message' required/> */}
-      <div class="form-outline">
-        <textarea class="form-control" id="textAreaExample1" rows="4"
+    const [complaintee,setComplaintee] = useState("");
+    const navigate = useNavigate();
+    const db = getFirestore(app);
+    
+    useEffect(() => {
+      const auth = getAuth();
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          setComplaintee(user.email);
+          console.log("Current User: " + user.email);
+        } else {
+          console.log("User not found");
+          navigate('/');
+        }
+      });
+    }, []);
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      
+      const data = {
+        message,
+        dept: null,
+        status: null,
+        priority: null
+      };
+
+      // Request to model 1 for dept
+
+      // Request to model 2 for priority
+
+      const docRef = await addDoc(collection(db, "complaints"), data);
+
+      // console.log("Complaintee: " + complaintee);
+      const userDoc = doc(db, "users", complaintee);
+      await updateDoc(userDoc, {
+        complaints: arrayUnion(docRef.id)
+      });
+    }
+
+    return (
+    <form className="reg_form" onSubmit={handleSubmit}>
+      <h1 className="mb-3">Complaint Form</h1>
+      
+      <div className="form-outline">
+        <textarea className="form-control" id="textAreaExample1" rows="4"
         onChange={(e) => setMessage(e.target.value)} value={message}></textarea>
-        <label class="form-label" for="textAreaExample">Message</label>
+        <label className="form-label">Message</label>
       </div>
-      <p class="lead">*Input should be atleast 10 characters</p>
+      
+      <p className="lead">*Input should be atleast 10 characters</p>
+      
       <MDBInput type='file' />
 
       <MDBCheckbox
@@ -30,9 +79,7 @@ export default function RegForm() {
         defaultChecked
       />
       
-      <Link to="/dashboard">
       <MDBBtn type='submit' className='mb-4' block disabled={message.length<10}>Submit</MDBBtn>
-      </Link>
     </form>
   );
 }

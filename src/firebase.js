@@ -2,12 +2,12 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAkAeTw7B2O8GPuoFwmo9aP41YKffeubRQ",
-  authDomain: "ccas-93a68.firebaseapp.com",
-  projectId: "ccas-93a68",
-  storageBucket: "ccas-93a68.appspot.com",
-  messagingSenderId: "767388681415",
-  appId: "1:767388681415:web:ee697a09990027d5dfaae2"
+    apiKey: "AIzaSyAe0iarveZaolv2oajXvWKZRHQEwxi9sCI",
+    authDomain: "cybercomplaintautosys.firebaseapp.com",
+    projectId: "cybercomplaintautosys",
+    storageBucket: "cybercomplaintautosys.appspot.com",
+    messagingSenderId: "258386984575",
+    appId: "1:258386984575:web:49768025b8f1633489894a"
 };
 
 const app = initializeApp(firebaseConfig);

@@ -7,12 +7,15 @@ import "../login/Login.css";
 import { Link } from 'react-router-dom';
 import AuthContext from "../context/AuthProvider";
 import axios from '../api/axios';
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 // const LOGIN_URL = '/auth'
 
 function Login() {
   const {setAuth} = useContext(AuthContext);
   const userRef=useRef();
   const errRef=useRef();
+  const navigate = useNavigate();
 
   const [user,setUser] = useState('');
   const [pwd,setPwd] = useState('');
@@ -30,26 +33,20 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    try {
-      const response = await axios.post(Login_URL,
-      JSON.stringify({user,pwd}),
-      {
-        headers : { 'Content-Type':'application/json'},
-        withCredentials : true
-      });
-      const accessToken = response?.data?.accessToken;
-      const roles = response?.data?.roles;
-      setAuth({user,pwd,roles,accessToken});
-      setUser('');
-      setPwd('');
-        setSuccess(true);
-    } catch (err) {
-      if(!err?.response) setErrMsg('No server response')
-      else if(err?.response?.status === 400) setErrMsg('Missing Username or Password');
-      else if(err?.response?.status === 401) setErrMsg('Unauthorized');
-      else setErrMsg('Login Failed')
-      errRef.current.focus();
-    }
+    const auth = getAuth();
+    signInWithEmailAndPassword(auth, user, pwd)
+    .then((userCredential) => {
+      // Signed in 
+      const user = userCredential.user;
+      console.log("User logged In");
+      navigate('/dashboard');
+      // ...
+    })
+    .catch((error) => {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      console.log(errorMessage);
+    });
   }
 
   return (
